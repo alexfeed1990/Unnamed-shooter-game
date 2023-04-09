@@ -1,0 +1,98 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build debug",
+            "type": "process",
+            "command": "gcc",
+            "args": [
+                    "main.c",
+                    "-o",
+                    "main.exe",
+                    "-O1",
+                    "-Wall",
+                    "-std=c99",
+                    "-Wno-missing-braces",
+                    "-I",
+                    "include/",
+                    "-L",
+                    "lib/",
+                    "-lraylib",
+                    "-lopengl32",
+                    "-lgdi32",
+                    "-lwinmm"
+            ],
+            "windows": {
+                "command": "gcc",
+                "args": [
+                    "main.c",
+                    "-o",
+                    "main.exe",
+                    "-O1",
+                    "-Wall",
+                    "-std=c99",
+                    "-Wno-missing-braces",
+                    "-I",
+                    "include/",
+                    "-L",
+                    "lib/",
+                    "-lraylib",
+                    "-lopengl32",
+                    "-lgdi32",
+                    "-lwinmm"
+                ],
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "build release",
+            "type": "process",
+            "command": "gcc",
+            "args": [
+                    "main.c",
+                    "-o",
+                    "main.exe",
+                    "-O1",
+                    "-Wall",
+                    "-std=c99",
+                    "-Wno-missing-braces",
+                    "-I",
+                    "include/",
+                    "-L",
+                    "lib/",
+                    "-lraylib",
+                    "-lopengl32",
+                    "-lgdi32",
+                    "-lwinmm"
+            ],
+            "windows": {
+                "command": "gcc",
+                "args": [
+                    "main.c",
+                    "-o",
+                    "main.exe",
+                    "-O1",
+                    "-Wall",
+                    "-std=c99",
+                    "-Wno-missing-braces",
+                    "-I",
+                    "include/",
+                    "-L",
+                    "lib/",
+                    "-lraylib",
+                    "-lopengl32",
+                    "-lgdi32",
+                    "-lwinmm"
+                ],
+            },
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
