@@ -7,6 +7,7 @@
 
 #define MAP_WIDTH 10
 #define MAP_HEIGHT 10
+#define CUBE_SIZE 10
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color);
 void DrawCubeTextureRec(Texture2D texture, Rectangle source, Vector3 position, float width, float height, float length, Color color); // Draw cube with a region of a texture
 bool checkCollisionAABB(Rectangle rec1, Rectangle rec2);
@@ -34,22 +35,29 @@ int main(void)
     int map[MAP_HEIGHT][MAP_WIDTH] = {
         {0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
         {0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 1, 1, 0, 0, 0, 1},
-        {1, 0, 1, 0, 1, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
-        {1, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 1, 1, 1, 1, 1, 1, 0, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-    };
+        {1, 0, 0, 0, 1, 1, 0, 0, 0, 1},
+        {1, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
 
     DisableCursor();
     SetTargetFPS(60);
 
+    Vector2 PlayerOrigin = {300, 300}; // position
+    Vector2 PlayerDirection = {1, 0};  // rotation (euler without y) uler
+
+    float Radius = 25; // size of circle OR can be used as player size
+
     // Main game loop
     while (!WindowShouldClose())
     {
+        PlayerOrigin = (Vector2){camera.position.x, camera.position.z};
+        PlayerDirection = (Vector2){camera.target.x, camera.target.z};
+
         /*
             Checklist;
                 - Collision - half working.
@@ -62,17 +70,18 @@ int main(void)
                 - Multiplayer (please dont)
         */
 
+        // ------------------ Movement and collision -------------- //
+
         float charSpeed = 0.4;
         float sensitivity = 0.05;
-        float playerThickness = 0;
-        float cubeSize = 10; // basically tile size. (And wall X and Z)
+        float playerThickness = 1; // basically tile size. (And wall X and Z)
         if (IsKeyDown(KEY_LEFT_SHIFT))
         {
             charSpeed = 0.6;
         }
         else if (IsKeyDown(KEY_LEFT_CONTROL))
         {
-            charSpeed = 0.2; 
+            charSpeed = 0.2;
         }
 
         Vector3 velocity = (Vector3){
@@ -81,28 +90,49 @@ int main(void)
             0.0f};
 
         Vector3 destination = Vector3Add(camera.position, velocity);
-        Vector2 plrMin = (Vector2){destination.x + playerThickness, destination.z + playerThickness};
-        Vector2 plrMax = (Vector2){destination.x - playerThickness, destination.z - playerThickness};
-        int minCubeX = floor(plrMin.x / cubeSize);
-        int minCubeY = floor(plrMin.y / cubeSize);
-        int maxCubeX = ceil(plrMax.x / cubeSize);
-        int maxCubeY = ceil(plrMax.y / cubeSize);
+        Vector2 newPosOrigin = (Vector2){destination.x, destination.z};
+        Rectangle* Rects[MAP_WIDTH * MAP_HEIGHT] = makeRectsFromMap(map);
+        int RectCount = MAP_WIDTH * MAP_HEIGHT;
 
-        Rectangle playerRec = (Rectangle){plrMin.x, plrMin.y, plrMax.x - plrMin.x, plrMax.y - plrMin.y};
+        Vector2 intersectPoint[2] = {{-100, -100}, {-100, -100}}; // you can only have two collisions at once.
+        bool collided = false;                                    // self explanatorian
 
-        for (int i = minCubeX; i <= maxCubeX; i++)
+        int collisionCount = 0;
+        for (int i = 0; i < RectCount; i++)
         {
-            for (int j = minCubeY; j <= maxCubeY; j++)
+            Vector2 hitPoint = {-100, -100}; // position of where the raycast hit
+            Vector2 hitNormal = {0, 0};      // normal of the face it hits
+            PointNearestRectanglePoint(Rects[i], newPosOrigin, &hitPoint, &hitNormal);
+
+            Vector2 vectorToHit = Vector2Subtract(hitPoint, newPosOrigin); // distance between new position and hitpoint
+
+            bool inside = Vector2LengthSqr(vectorToHit) < Radius * Radius; // if distance == radisu size then kys
+
+            if (inside) // if inside
             {
-                if (map[i][j] == 0)
-                    continue;
-                Rectangle cubeRec = (Rectangle){(i * cubeSize) - cubeSize / 2, (j * cubeSize) - cubeSize / 2, cubeSize, cubeSize};
-                if (checkCollisionAABB(playerRec, cubeRec))
-                {
-                    velocity = (Vector3){0, 0, 0};
-                }
+                collided = true;                             // then collided
+                intersectPoint[collisionCount++] = hitPoint; // set the point where the raycast hit
+
+                // make the distance vector normal
+                vectorToHit = Vector2Normalize(vectorToHit);
+
+                // project that out to the radius to find the point that should be 'deepest' into the rectangle.
+                // add the calculated position to the point the vector hit * the size of the player
+                Vector2 projectedPoint = Vector2Add(newPosOrigin, Vector2Scale(vectorToHit, Radius));
+
+                // compute the shift to take the deepest point out to the edge of our nearest hit, based on the vector direction
+                Vector2 delta = {0, 0};
+
+                if (hitNormal.x != 0)
+                    delta.x = hitPoint.x - projectedPoint.x;
+                else
+                    delta.y = hitPoint.y - projectedPoint.y;
+
+                // shift the new point by the delta to push us outside of the rectangle
+                newPosOrigin = Vector2Add(newPosOrigin, delta);
             }
         }
+        PlayerOrigin = newPosOrigin;
 
         UpdateCameraPro(&camera, velocity,
                         (Vector3){
@@ -111,12 +141,18 @@ int main(void)
                             0.0f                             // Rotation: roll
                         },
                         GetMouseWheelMove() * 0.0f); // Move to target (zoom)
+        camera.position = (Vector3){PlayerOrigin.x, camera.position.y, PlayerOrigin.y};
+
+        // ------------------ Init -------------- //
 
         BeginDrawing();
 
         ClearBackground((Color){255, 255, 255});
 
         BeginMode3D(camera);
+
+        // ------------------ Rendering world  -------------- //
+
         // Imagine these as X and Y
 
         float floorHeight = 0;
@@ -130,18 +166,20 @@ int main(void)
             {
                 if (map[i][j] == 1)
                 {
-                    DrawCubeTexture(wallTexture, (Vector3){i * cubeSize, wallHeight / 2 + floorHeight, j * cubeSize}, cubeSize, wallHeight, cubeSize, WHITE);
+                    DrawCubeTexture(wallTexture, (Vector3){i * CUBE_SIZE, wallHeight / 2 + floorHeight, j * CUBE_SIZE}, CUBE_SIZE, wallHeight, CUBE_SIZE, WHITE);
                 }
                 else
                 {
-                    DrawCubeTexture(floorTexture, (Vector3){i * cubeSize, floorHeight, j * cubeSize}, cubeSize, 0.0f, cubeSize, WHITE);
+                    DrawCubeTexture(floorTexture, (Vector3){i * CUBE_SIZE, floorHeight, j * CUBE_SIZE}, CUBE_SIZE, 0.0f, CUBE_SIZE, WHITE);
                     // Draw ceiling & floor
-                    DrawCubeTexture(ceilingTexture, (Vector3){i * cubeSize, ceilingHeight, j * cubeSize}, cubeSize, 0.0f, cubeSize, BROWN);
+                    DrawCubeTexture(ceilingTexture, (Vector3){i * CUBE_SIZE, ceilingHeight, j * CUBE_SIZE}, CUBE_SIZE, 0.0f, CUBE_SIZE, BROWN);
                 }
             }
         }
 
         EndMode3D();
+
+        // ------------------ HUD -------------- //
 
         DrawText("Stamina: 10/10", 10, 10, 20, RED);
         DrawText("Health: 10/10", 10, 30, 20, RED);
@@ -160,6 +198,29 @@ bool checkCollisionAABB(Rectangle rec1, Rectangle rec2)
         rec1.x + rec1.width > rec2.x &&
         rec1.y < rec2.y + rec2.height &&
         rec1.y + rec1.height > rec2.y)
-    { return true; }
+    {
+        return true;
+    }
     return false;
+}
+
+Rectangle *makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT])
+{
+    Rectangle rects[MAP_WIDTH * MAP_HEIGHT];
+    int count = 0;
+    for (int i = 0; i < MAP_WIDTH; i++)
+    {
+        for (int j = 0; j < MAP_HEIGHT; j++)
+        {
+            if (map[i][j] == 1)
+            {
+                rects[count] = (Rectangle){MAP_WIDTH * CUBE_SIZE,
+                                                           MAP_HEIGHT * CUBE_SIZE,
+                                                           CUBE_SIZE,
+                                                           CUBE_SIZE};
+                count++;
+            }
+        }
+    }
+    return rects;
 }
