@@ -10,7 +10,7 @@
 #define CUBE_SIZE 10
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color);
 void DrawCubeTextureRec(Texture2D texture, Rectangle source, Vector3 position, float width, float height, float length, Color color); // Draw cube with a region of a texture
-bool checkCollisionAABB(Rectangle rec1, Rectangle rec2);
+void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH * MAP_HEIGHT]); 
 
 int main(void)
 {
@@ -48,15 +48,14 @@ int main(void)
     SetTargetFPS(60);
 
     Vector2 PlayerOrigin = {300, 300}; // position
-    Vector2 PlayerDirection = {1, 0};  // rotation (euler without y) uler
 
     float Radius = 25; // size of circle OR can be used as player size
 
     // Main game loop
     while (!WindowShouldClose())
     {
+        SetExitKey(KEY_DELETE);
         PlayerOrigin = (Vector2){camera.position.x, camera.position.z};
-        PlayerDirection = (Vector2){camera.target.x, camera.target.z};
 
         /*
             Checklist;
@@ -74,7 +73,7 @@ int main(void)
 
         float charSpeed = 0.4;
         float sensitivity = 0.05;
-        float playerThickness = 1; // basically tile size. (And wall X and Z)
+
         if (IsKeyDown(KEY_LEFT_SHIFT))
         {
             charSpeed = 0.6;
@@ -91,13 +90,10 @@ int main(void)
 
         Vector3 destination = Vector3Add(camera.position, velocity);
         Vector2 newPosOrigin = (Vector2){destination.x, destination.z};
-        Rectangle* Rects[MAP_WIDTH * MAP_HEIGHT] = makeRectsFromMap(map);
+        Rectangle Rects[MAP_WIDTH * MAP_HEIGHT];
+        makeRectsFromMap(map, Rects);
         int RectCount = MAP_WIDTH * MAP_HEIGHT;
 
-        Vector2 intersectPoint[2] = {{-100, -100}, {-100, -100}}; // you can only have two collisions at once.
-        bool collided = false;                                    // self explanatorian
-
-        int collisionCount = 0;
         for (int i = 0; i < RectCount; i++)
         {
             Vector2 hitPoint = {-100, -100}; // position of where the raycast hit
@@ -110,9 +106,6 @@ int main(void)
 
             if (inside) // if inside
             {
-                collided = true;                             // then collided
-                intersectPoint[collisionCount++] = hitPoint; // set the point where the raycast hit
-
                 // make the distance vector normal
                 vectorToHit = Vector2Normalize(vectorToHit);
 
@@ -141,7 +134,9 @@ int main(void)
                             0.0f                             // Rotation: roll
                         },
                         GetMouseWheelMove() * 0.0f); // Move to target (zoom)
+
         camera.position = (Vector3){PlayerOrigin.x, camera.position.y, PlayerOrigin.y};
+
 
         // ------------------ Init -------------- //
 
@@ -192,21 +187,8 @@ int main(void)
     return 0;
 }
 
-bool checkCollisionAABB(Rectangle rec1, Rectangle rec2)
+void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH * MAP_HEIGHT])
 {
-    if (rec1.x < rec2.x + rec2.width &&
-        rec1.x + rec1.width > rec2.x &&
-        rec1.y < rec2.y + rec2.height &&
-        rec1.y + rec1.height > rec2.y)
-    {
-        return true;
-    }
-    return false;
-}
-
-Rectangle *makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT])
-{
-    Rectangle rects[MAP_WIDTH * MAP_HEIGHT];
     int count = 0;
     for (int i = 0; i < MAP_WIDTH; i++)
     {
@@ -215,12 +197,11 @@ Rectangle *makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT])
             if (map[i][j] == 1)
             {
                 rects[count] = (Rectangle){MAP_WIDTH * CUBE_SIZE,
-                                                           MAP_HEIGHT * CUBE_SIZE,
-                                                           CUBE_SIZE,
-                                                           CUBE_SIZE};
+                                           MAP_HEIGHT * CUBE_SIZE,
+                                           CUBE_SIZE,
+                                           CUBE_SIZE};
                 count++;
             }
         }
     }
-    return rects;
 }
