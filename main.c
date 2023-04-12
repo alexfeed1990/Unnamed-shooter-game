@@ -50,8 +50,11 @@ int main(void)
 
     DisableCursor();
     SetTargetFPS(60);
+    Rectangle Rects[MAP_WIDTH * MAP_HEIGHT];
+    makeRectsFromMap(map, Rects);
+    int RectCount = MAP_WIDTH * MAP_HEIGHT;
 
-    float Radius = 25; // size of circle OR can be used as player size
+    float Radius = 3; // size of circle OR can be used as player size
 
     // Main game loop
     while (!WindowShouldClose())
@@ -96,9 +99,7 @@ int main(void)
         
         Vector3 destination = Vector3Add(camera.position, velocity);
         Vector2 newPosOrigin = (Vector2){destination.x, destination.z};
-        Rectangle Rects[MAP_WIDTH * MAP_HEIGHT];
-        makeRectsFromMap(map, Rects);
-        int RectCount = MAP_WIDTH * MAP_HEIGHT;
+
 
         for (int i = 0; i < RectCount; i++)
         {
@@ -131,7 +132,8 @@ int main(void)
                 newPosOrigin = Vector2Add(newPosOrigin, delta);
             }
         }
-
+        camera.target = Vector3Add( camera.target,  (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y});
+        camera.position = (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y};
 
         UpdateCameraPro(&camera, velocity,
                         (Vector3){
@@ -141,7 +143,8 @@ int main(void)
                         },
                         GetMouseWheelMove() * 0.0f); // Move to target (zoom)
 
-        //camera.position = (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y};
+        
+        
 
         // ------------------ Init -------------- //
 
@@ -191,17 +194,21 @@ int main(void)
     return 0;
 }
 
+
 void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH * MAP_HEIGHT])
 {
     int count = 0;
-    for (int i = 0; i < MAP_WIDTH; i++)
+    for (int i = 0; i < MAP_WIDTH; i++) // for i in map width???
     {
-        for (int j = 0; j < MAP_HEIGHT; j++)
+        printf("interX");
+        for (int j = 0; j < MAP_HEIGHT; j++) // for j in map hieghjdfsd????
         {
-            if (map[i][j] == 1)
+            printf("intery");
+            if (map[i][j] == 1) //if a cube is there
             {
+                printf("cuberhere");
                 rects[count] = (Rectangle){i * CUBE_SIZE,
-                                           j * CUBE_SIZE,
+                                            j *CUBE_SIZE,
                                            CUBE_SIZE,
                                            CUBE_SIZE};
                 printf("%i %i \n", i, j);
