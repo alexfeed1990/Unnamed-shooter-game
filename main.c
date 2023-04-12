@@ -95,11 +95,9 @@ int main(void)
             (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) * charSpeed - (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) * charSpeed,
             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * charSpeed - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * charSpeed,
             0.0f};
-
         
         Vector3 destination = Vector3Add(camera.position, velocity);
         Vector2 newPosOrigin = (Vector2){destination.x, destination.z};
-
 
         for (int i = 0; i < RectCount; i++)
         {
@@ -113,7 +111,6 @@ int main(void)
 
             if (inside) // if inside
             {
-                printf("inside");
                 // make the distance vector normal
                 vectorToHit = Vector2Normalize(vectorToHit);
 
@@ -132,7 +129,7 @@ int main(void)
                 newPosOrigin = Vector2Add(newPosOrigin, delta);
             }
         }
-        camera.target = Vector3Add( camera.target,  (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y});
+        camera.target = Vector3Add(camera.target, (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y});
         camera.position = (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y};
 
         UpdateCameraPro(&camera, velocity,
@@ -200,18 +197,15 @@ void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH 
     int count = 0;
     for (int i = 0; i < MAP_WIDTH; i++) // for i in map width???
     {
-        printf("interX");
         for (int j = 0; j < MAP_HEIGHT; j++) // for j in map hieghjdfsd????
         {
-            printf("intery");
             if (map[i][j] == 1) //if a cube is there
             {
-                printf("cuberhere");
                 rects[count] = (Rectangle){i * CUBE_SIZE,
                                             j *CUBE_SIZE,
                                            CUBE_SIZE,
                                            CUBE_SIZE};
-                printf("%i %i \n", i, j);
+                //printf("%i %i \n", i, j);
                 count++;
             }
         }
