@@ -8,14 +8,18 @@
 #define MAP_WIDTH 10
 #define MAP_HEIGHT 10
 #define CUBE_SIZE 10
+#define WIDTH 800
+#define HEIGHT 450
+
 void DrawCubeTexture(Texture2D texture, Vector3 position, float width, float height, float length, Color color);
 void DrawCubeTextureRec(Texture2D texture, Rectangle source, Vector3 position, float width, float height, float length, Color color); // Draw cube with a region of a texture
 void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH * MAP_HEIGHT]); 
+void ToggleProperFullscreen();
 
 int main(void)
 {
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenWidth = WIDTH;
+    const int screenHeight = HEIGHT;
 
     InitWindow(screenWidth, screenHeight, "Unnamed shooter game");
 
@@ -47,15 +51,16 @@ int main(void)
     DisableCursor();
     SetTargetFPS(60);
 
-    Vector2 PlayerOrigin = {300, 300}; // position
-
     float Radius = 25; // size of circle OR can be used as player size
 
     // Main game loop
     while (!WindowShouldClose())
     {
         SetExitKey(KEY_DELETE);
-        PlayerOrigin = (Vector2){camera.position.x, camera.position.z};
+
+        if(IsKeyPressed(KEY_F11)) {
+            ToggleProperFullscreen();
+        }
 
         /*
             Checklist;
@@ -88,6 +93,7 @@ int main(void)
             (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) * charSpeed - (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) * charSpeed,
             0.0f};
 
+        
         Vector3 destination = Vector3Add(camera.position, velocity);
         Vector2 newPosOrigin = (Vector2){destination.x, destination.z};
         Rectangle Rects[MAP_WIDTH * MAP_HEIGHT];
@@ -106,10 +112,10 @@ int main(void)
 
             if (inside) // if inside
             {
+                printf("inside");
                 // make the distance vector normal
                 vectorToHit = Vector2Normalize(vectorToHit);
 
-                // project that out to the radius to find the point that should be 'deepest' into the rectangle.
                 // add the calculated position to the point the vector hit * the size of the player
                 Vector2 projectedPoint = Vector2Add(newPosOrigin, Vector2Scale(vectorToHit, Radius));
 
@@ -125,7 +131,7 @@ int main(void)
                 newPosOrigin = Vector2Add(newPosOrigin, delta);
             }
         }
-        PlayerOrigin = newPosOrigin;
+
 
         UpdateCameraPro(&camera, velocity,
                         (Vector3){
@@ -135,8 +141,7 @@ int main(void)
                         },
                         GetMouseWheelMove() * 0.0f); // Move to target (zoom)
 
-        camera.position = (Vector3){PlayerOrigin.x, camera.position.y, PlayerOrigin.y};
-
+        //camera.position = (Vector3){newPosOrigin.x, camera.position.y, newPosOrigin.y};
 
         // ------------------ Init -------------- //
 
@@ -176,8 +181,7 @@ int main(void)
 
         // ------------------ HUD -------------- //
 
-        DrawText("Stamina: 10/10", 10, 10, 20, RED);
-        DrawText("Health: 10/10", 10, 30, 20, RED);
+        DrawText("Press DELETE to quit game.", 10, 10, 20, RED);
 
         EndDrawing();
     }
@@ -196,12 +200,27 @@ void makeRectsFromMap(int map[MAP_WIDTH][MAP_HEIGHT], Rectangle rects[MAP_WIDTH 
         {
             if (map[i][j] == 1)
             {
-                rects[count] = (Rectangle){MAP_WIDTH * CUBE_SIZE,
-                                           MAP_HEIGHT * CUBE_SIZE,
+                rects[count] = (Rectangle){i * CUBE_SIZE,
+                                           j * CUBE_SIZE,
                                            CUBE_SIZE,
                                            CUBE_SIZE};
+                printf("%i %i \n", i, j);
                 count++;
             }
         }
+    }
+}
+
+void ToggleProperFullscreen() {
+    if (!IsWindowFullscreen())
+    {
+        int monitor = GetCurrentMonitor();
+        SetWindowSize(GetMonitorWidth(monitor), GetMonitorHeight(monitor));
+        ToggleFullscreen();
+    }
+    else
+    {
+        ToggleFullscreen();
+        SetWindowSize(WIDTH, HEIGHT);
     }
 }
